@@ -6,7 +6,9 @@ class User(AbstractUser):
     """ Модель пользователя. """
     username = None
     email = models.EmailField(
-        unique=True, verbose_name="Email", help_text="Введите ваш email"
+        unique=True,
+        verbose_name="Email",
+        help_text="Введите ваш email"
     )
     phone = models.CharField(
         max_length=35,
@@ -50,4 +52,3 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-

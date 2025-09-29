@@ -1,45 +1,77 @@
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
 
 from users.models import User
-from users.permissions import IsModerator, IsOwner
-from users.serializers import UserRegisterSerializer, UserSerializer
+from users.permissions import IsModerator, IsUserOwner
+from users.serializers import UserRegisterSerializer, UserSerializer, UserPasswordChangeSerializer, \
+    UserProfileSerializer
 
 
 class UserViewSet(ModelViewSet):
     """Создание CRUD для пользователя"""
 
     serializer_class = UserSerializer
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('-date_joined')
+
+    def get_serializer_class(self):
+        """Выбор сериализатора в зависимости от действия"""
+        if self.action == 'create':  # создание пользователя
+            return UserRegisterSerializer
+        elif self.action == 'change_password':  # изменение пароля пользователя
+            return UserPasswordChangeSerializer
+        elif self.action == 'retrieve' and self.request.user == self.get_object(): # просмотр своего профиля = все поля
+            return UserSerializer
+        elif self.action == 'retrieve': # просмотр профиля другого пользователя
+            return UserProfileSerializer
+        return UserSerializer # все остальные действия
+
 
     def get_permissions(self):
         """Получение прав для действий с пользователями"""
 
         if self.action == "create":
-            self.permission_classes = [AllowAny]
+            permission_classes = [AllowAny] # Регистрация доступна всем
         elif self.action in ["list"]:
-            self.permission_classes = [IsAuthenticated]
-        elif self.action in ["update", "partial_update", "retrieve", "destroy"]:
-            self.permission_classes = [IsAuthenticated & (IsModerator | IsOwner)]
+            permission_classes = [IsAuthenticated & IsModerator] # Список пользователей - только для модераторов
+        elif self.action in ["update", "partial_update", "destroy", "change_password"]:
+            permission_classes = [IsAuthenticated & (IsModerator | IsUserOwner)] # Изменение и удаление - только для модераторов и владельцев
+        elif self.action in ['retrieve', 'profile']:
+            permission_classes = [IsAuthenticated] # Просмотр - только для авторизованных пользователей
         else:
-            # Запасной вариант
-            self.permission_classes = [IsAuthenticated]
+            permission_classes = [IsAuthenticated] # Запасной вариант - только для авторизованных пользователей
 
-        return [
-            permission() for permission in self.permission_classes
-        ]  # возвращаем разрешения в виде списка объектов
+        return [permission() for permission in permission_classes]  # возврат разрешений в виде списка объектов
 
-    def get_serializer_class(self):
-        """Выбор сериализатора в зависимости от действия"""
-        if self.action == "create":  # если действие - создание пользователя
-            return UserRegisterSerializer  # сериализатор только с email, password и ID телеграмма
-        else:
-            return UserSerializer  # иначе - обычный сериализатор
 
     def perform_create(self, serializer):
         """Изменение данных пользователя (т.к. в модели User переопределили логин с username на email)"""
         user = serializer.save(
             is_active=True
         )  # создание пользователя и его активация в БД
-        user.set_password(user.password)  # хеширование пароля пользователя
-        user.save()  # сохранение изменений для пользователя в БД
+
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        """Получить профиль текущего пользователя"""
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+
+    @action(detail=True, methods=['post'])
+    def change_password(self, request, pk=None):
+        """Изменение пароля"""
+        user = self.get_object()
+        serializer = UserPasswordChangeSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serializer.is_valid():
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'message': 'Пароль изменен'}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
