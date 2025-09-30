@@ -33,12 +33,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    # "rest_framework_simplejwt",
-    # "drf_yasg",
-    # "django_celery_beat",
+    "rest_framework_simplejwt",
+    "drf_yasg",
+    "django_celery_beat",
+    'corsheaders',
+
     "users",
     "habits_tracker",
-
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -71,12 +73,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 REST_FRAMEWORK = {
-    # Настройки фильтрации
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     # Настройки JWT-токенов
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     # Настройки глобальных разрешений по умолчанию. Доступ для всех API-views только для авторизованных пользователей
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     # Настройки по умолчанию для пагинации
@@ -86,10 +84,10 @@ REST_FRAMEWORK = {
 
 
 # Настройка JWT-токенов (для авторизации в приложении users)
-# SIMPLE_JWT = {
-#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Время жизни токена доступа
-#     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # Время жизни токена обновления
-# }
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Время жизни токена доступа
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # Время жизни токена обновления
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -163,49 +161,37 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"  # По умолчанию 
 # Авторизация в приложении users (для использования собственного класса пользователя)
 AUTH_USER_MODEL = "users.User"  # Для аутентификации используется собственный класс User
 
-# Настройка отправки почты через сервер Яндекса
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = os.getenv("EMAIL_HOST")
-# EMAIL_PORT = os.getenv("EMAIL_PORT")
-# EMAIL_USE_TLS = False
-# EMAIL_USE_SSL = True
-# EMAIL_HOST_USER = os.getenv(
-#     "EMAIL_HOST_USER"
-# )  # Адрес электронной почты для отправки почты
-# EMAIL_HOST_PASSWORD = os.getenv(
-#     "EMAIL_HOST_PASSWORD"
-# )  # Пароль от сервиса яндекса для отправки почты
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # По умолчанию отправляем письма с этого адреса
-
-# Кэширование в Redis (для ускорения работы приложения). Установка: poetry add redis
-# CACHE_ENABLED = True  # Включаем кэширование в приложении (можно вынести в .env)
-# if CACHE_ENABLED:
-#     CACHES = {
-#         'default': {
-#             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-#             'LOCATION': 'redis://127.0.0.1:6379/1',  # или 'redis://localhost:6379/1'
-#         }
-#     }
 
 # Настройки для Celery
+
 # URL-адрес брокера сообщений
-# CELERY_BROKER_URL = os.getenv(
-#     "CELERY_BROKER_URL"
-# )  # Например, Redis, который по умолчанию работает на порту 6379
-# # URL-адрес брокера результатов, также Redis
-# CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
-# # Часовой пояс для работы Celery
-# CELERY_TIMEZONE = TIME_ZONE  # временная зона должна совпадать зоной в Django
-# # Флаг отслеживания выполнения задач
-# CELERY_TASK_TRACK_STARTED = True
-# # Максимальное время на выполнение задачи
-# CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 минут
-# # Настройка расписания выполнения задач для Celery
-# CELERY_BEAT_SCHEDULE = {
-#     "deactivate-inactive-users-monthly": {
-#         "task": "users.tasks.deactivate_inactive_users",  # Путь к задаче
-#         "schedule": crontab(
-#             hour=8, minute=0, day_of_week=1
-#         ),  # Каждый понедельник в 8:00
-#     },
-# }
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")  # Например, Redis, который по умолчанию работает на порту 6379
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = TIME_ZONE  # временная зона (совпадает с временной зоной в Django)
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 минут
+
+# Настройка расписания выполнения задач для Celery
+CELERY_BEAT_SCHEDULE = {
+    "send-habit-reminders": {
+        "task": "habits_tracker.tasks.send_reminder_message",  # Путь к задаче
+        "schedule": 60,  # Каждые 60 секунд (1 минута)
+    },
+}
+
+TELEGRAM_URL = "https://api.telegram.org/bot"  # URL для отправки сообщений в Telegram
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")  # Токен бота Telegram
+
+CORS_ALLOWED_ORIGINS = [
+    'https://read-only.example.com',
+    'https:// read-and-write.example.com',
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://read-and-write.example.com",
+
+]
+CORS_ALLOW_ALL_ORIGINS = False
