@@ -13,5 +13,6 @@ class IsModerator(BasePermission):
 
 class IsUserOwner(BasePermission):
     """Класс для проверки, является ли пользователь владельцем аккаунта"""
+
     def has_object_permission(self, request, view, obj):
         return obj == request.user

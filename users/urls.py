@@ -11,9 +11,7 @@ app_name = UsersConfig.name  # Извлечение имени приложен�
 router = DefaultRouter()  # Создание экземпляра DefaultRouter для регистрации ViewSet
 
 # Регистрация ViewSet с именем users
-router.register(
-    r"users", UserViewSet, basename="users"
-)
+router.register(r"users", UserViewSet, basename="users")
 
 urlpatterns = [
     path(

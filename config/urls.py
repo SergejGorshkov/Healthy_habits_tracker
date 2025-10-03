@@ -26,9 +26,7 @@ urlpatterns = [
     path("habits_tracker/", include("habits_tracker.urls", namespace="habits_tracker")),
     path("users/", include("users.urls", namespace="users")),
     # # Маршруты для документации API Swagger и Redoc
-    path(
-        "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
-    ),
+    path("swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"),
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
@@ -38,4 +36,4 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # для работы медиафайлов в админке
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # для работы медиафайлов в админке

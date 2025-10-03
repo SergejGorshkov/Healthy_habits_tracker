@@ -8,29 +8,68 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Habit',
+            name="Habit",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('place', models.CharField(max_length=255, verbose_name='Место выполнения привычки')),
-                ('time', models.TimeField(verbose_name='Время выполнения привычки')),
-                ('action', models.CharField(max_length=255, verbose_name='Действие при выполнении привычки')),
-                ('is_pleasant', models.BooleanField(default=False, verbose_name='Признак "приятной" привычки')),
-                ('periodicity', models.PositiveIntegerField(choices=[(1, 'Ежедневно'), (2, 'Раз в 2 дня'), (3, 'Раз в 3 дня'), (4, 'Раз в 4 дня'), (5, 'Раз в 5 дней'), (6, 'Раз в 6 дней'), (7, 'Раз в неделю')], default=1, verbose_name='Периодичность выполнения привычки (в днях)')),
-                ('reward', models.CharField(blank=True, help_text='Можно указывать, если не выбрана связанная "приятная" привычка', max_length=255, verbose_name='Вознаграждение')),
-                ('time_to_complete', models.PositiveIntegerField(default=120, help_text='Должно быть не более 120 секунд', verbose_name='Время на выполнение (в секундах)')),
-                ('is_public', models.BooleanField(default=False, verbose_name='Признак публичности привычки')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('related_habit', models.ForeignKey(blank=True, help_text='Можно указывать, если не выбрано вознаграждение или это описание "приятной" привычки', null=True, on_delete=django.db.models.deletion.SET_NULL, to='habits_tracker.habit', verbose_name='Связанная привычка')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("place", models.CharField(max_length=255, verbose_name="Место выполнения привычки")),
+                ("time", models.TimeField(verbose_name="Время выполнения привычки")),
+                ("action", models.CharField(max_length=255, verbose_name="Действие при выполнении привычки")),
+                ("is_pleasant", models.BooleanField(default=False, verbose_name='Признак "приятной" привычки')),
+                (
+                    "periodicity",
+                    models.PositiveIntegerField(
+                        choices=[
+                            (1, "Ежедневно"),
+                            (2, "Раз в 2 дня"),
+                            (3, "Раз в 3 дня"),
+                            (4, "Раз в 4 дня"),
+                            (5, "Раз в 5 дней"),
+                            (6, "Раз в 6 дней"),
+                            (7, "Раз в неделю"),
+                        ],
+                        default=1,
+                        verbose_name="Периодичность выполнения привычки (в днях)",
+                    ),
+                ),
+                (
+                    "reward",
+                    models.CharField(
+                        blank=True,
+                        help_text='Можно указывать, если не выбрана связанная "приятная" привычка',
+                        max_length=255,
+                        verbose_name="Вознаграждение",
+                    ),
+                ),
+                (
+                    "time_to_complete",
+                    models.PositiveIntegerField(
+                        default=120,
+                        help_text="Должно быть не более 120 секунд",
+                        verbose_name="Время на выполнение (в секундах)",
+                    ),
+                ),
+                ("is_public", models.BooleanField(default=False, verbose_name="Признак публичности привычки")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "related_habit",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text='Можно указывать, если не выбрано вознаграждение или это описание "приятной" привычки',
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="habits_tracker.habit",
+                        verbose_name="Связанная привычка",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Привычка',
-                'verbose_name_plural': 'Привычки',
+                "verbose_name": "Привычка",
+                "verbose_name_plural": "Привычки",
             },
         ),
     ]

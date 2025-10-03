@@ -19,10 +19,25 @@ dependencies = [
     "celery (>=5.5.3,<6.0.0)",
     "django-celery-beat (>=2.5.0,<3.0.0)",
     "drf-yasg (>=1.21.11,<2.0.0)",
-    "django-cors-headers (>=4.9.0,<5.0.0)"
+    "django-cors-headers (>=4.9.0,<5.0.0)",
+    "black (>=25.9.0,<26.0.0)",
+    "isort (>=6.1.0,<7.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+# Максимальная длина строки
+line-length = 119
+# Файлы, которые не нужно форматировать
+exclude = '(.git|.venv)'
+
+[tool.isort]
+# максимальная длина строки
+line_length = 119
+multi_line_output = 1

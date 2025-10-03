@@ -36,8 +36,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_yasg",
     "django_celery_beat",
-    'corsheaders',
-
+    "corsheaders",
     "users",
     "habits_tracker",
 ]
@@ -50,7 +49,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -78,8 +77,8 @@ REST_FRAMEWORK = {
     # Настройки глобальных разрешений по умолчанию. Доступ для всех API-views только для авторизованных пользователей
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     # Настройки по умолчанию для пагинации
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 5,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 5,
 }
 
 
@@ -130,9 +129,7 @@ TIME_ZONE = "Europe/Moscow"  # Настройка временной зоны
 
 USE_I18N = True  # Включает поддержку интернационализации.
 
-USE_L10N = (
-    True  # Включает поддержку локализации, применяя форматирование даты и времени.
-)
+USE_L10N = True  # Включает поддержку локализации, применяя форматирование даты и времени.
 
 USE_TZ = True  # Включение поддержки временных зон
 
@@ -140,14 +137,10 @@ USE_TZ = True  # Включение поддержки временных зон
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"  # Маршрут к папке со статическими файлами
-STATICFILES_DIRS = (
-    BASE_DIR / "static",
-)  # Список папок на диске, из которых будут подгружаться статические файлы
+STATICFILES_DIRS = (BASE_DIR / "static",)  # Список папок на диске, из которых будут подгружаться статические файлы
 
 MEDIA_URL = "/media/"  # Путь к папке с медиафайлами
-MEDIA_ROOT = os.path.join(
-    BASE_DIR, "media"
-)  # Путь к папке на диске с медиафайлами, загружаемыми пользователем
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # Путь к папке на диске с медиафайлами, загружаемыми пользователем
 
 # Максимальный размер загружаемых файлов
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
@@ -187,11 +180,10 @@ TELEGRAM_URL = "https://api.telegram.org/bot"  # URL для отправки с�
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")  # Токен бота Telegram
 
 CORS_ALLOWED_ORIGINS = [
-    'https://read-only.example.com',
-    'https:// read-and-write.example.com',
+    "https://read-only.example.com",
+    "https:// read-and-write.example.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://read-and-write.example.com",
-
 ]
 CORS_ALLOW_ALL_ORIGINS = False
