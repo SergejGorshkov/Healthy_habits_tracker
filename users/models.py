@@ -3,11 +3,10 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """ Модель пользователя. """
+    """Модель пользователя."""
+
     username = None
-    email = models.EmailField(
-        unique=True, verbose_name="Email", help_text="Введите ваш email"
-    )
+    email = models.EmailField(unique=True, verbose_name="Email", help_text="Введите ваш email")
     phone = models.CharField(
         max_length=35,
         blank=True,
@@ -30,19 +29,11 @@ class User(AbstractUser):
         help_text="Загрузите ваш аватар",
     )
     tg_chat_id = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name="ID чата в Telegram",
-        help_text="Введите ID чата в Telegram"
+        max_length=50, blank=True, null=True, verbose_name="ID чата в Telegram", help_text="Введите ID чата в Telegram"
     )
 
-    USERNAME_FIELD = (
-        "email"  # означает, что мы хотим использовать email в качестве логина
-    )
-    REQUIRED_FIELDS = (
-        []
-    )  # означает, что мы не хотим использовать username в качестве обязательного поля
+    USERNAME_FIELD = "email"  # означает, что мы хотим использовать email в качестве логина
+    REQUIRED_FIELDS = []  # означает, что мы не хотим использовать username в качестве обязательного поля
 
     class Meta:
         verbose_name = "Пользователь"
@@ -50,4 +41,3 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
