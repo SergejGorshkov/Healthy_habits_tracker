@@ -178,7 +178,7 @@ jobs:
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-#            POSTGRES_HOST=127.0.0.1
+            POSTGRES_HOST=127.0.0.1
             # Django
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             DEBUG=False
