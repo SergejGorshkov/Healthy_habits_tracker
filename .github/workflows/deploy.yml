@@ -94,13 +94,7 @@ jobs:
             echo "Waiting for Postgres..."
             sleep 3
           done
-#      - name: Wait for Redis
-#        # Используем контейнер с redis-cli для проверки работоспособности Redis
-#        run: |
-#          until docker run --rm --network host redis:7-alpine redis-cli -h localhost -p 6379 ping | grep PONG; do
-#            echo "Waiting for Redis..."
-#            sleep 3
-#          done
+
 
       # Шаг 6: Применение миграций базы данных
       - name: Run migrations
