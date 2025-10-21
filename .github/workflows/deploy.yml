@@ -188,40 +188,27 @@ jobs:
             REDIS_URL=redis://redis:6379
             # Telegram
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
-            DOCKER_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
             EOF
             
-            # Останавливаем старые контейнеры
-            sudo docker-compose down --remove-orphans || true
+            # Остановка и удаление старого контейнера
+            sudo docker stop myapp || echo "Контейнер myapp не был запущен"
+            sudo docker rm myapp || echo "Контейнер myapp не был найден"
             
-            # Запускаем
-            sudo docker-compose pull
-            sudo docker-compose up -d
+            # Деплой контейнера с приложением на сервере
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+            sudo docker run -d \
+            --name myapp \
+            -p 80:8000 \
+            --env-file .env \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} \
+            python manage.py runserver 0.0.0.0:8000
+
+             # Ждем и проверяем
+            sleep 10
+            echo "=== Container status ==="
+            sudo docker ps -a
+            echo "=== Container logs ==="
+            sudo docker logs myapp || echo "No logs available"
             
-            # Проверяем
-            sleep 30
-            sudo docker-compose ps
-            sudo docker-compose logs web --tail=20
-            
-#            # Остановка и удаление старого контейнера
-#            sudo docker stop myapp || echo "Контейнер myapp не был запущен"
-#            sudo docker rm myapp || echo "Контейнер myapp не был найден"
-#
-#            # Деплой контейнера с приложением на сервере
-#            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-#            sudo docker run -d \
-#            --name myapp \
-#            -p 80:8000 \
-#            --env-file .env \
-#            ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} \
-#            python manage.py runserver 0.0.0.0:8000
-#
-#             # Ждем и проверяем
-#            sleep 10
-#            echo "=== Container status ==="
-#            sudo docker ps -a
-#            echo "=== Container logs ==="
-#            sudo docker logs myapp || echo "No logs available"
-#
-#            # Очистка старых образов
-#            sudo docker image prune -f
+            # Очистка старых образов
+            sudo docker image prune -f
