@@ -196,6 +196,7 @@ jobs:
             -p 80:8000 \
             --env-file .env \
             ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+            python manage.py runserver 0.0.0.0:8000
 
              # Ждем и проверяем
             sleep 10
