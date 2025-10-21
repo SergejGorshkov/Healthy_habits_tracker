@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -188,3 +189,13 @@ CSRF_TRUSTED_ORIGINS = [
     "https://read-and-write.example.com",
 ]
 CORS_ALLOW_ALL_ORIGINS = False
+
+# Динамически настраивает базу данных для тестов в Django проекте
+# Проверяет, присутствует ли 'test' в аргументах командной строки. Используется SQLite вместо основной БД
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',  # Используется SQLite вместо основной БД
+            'NAME': BASE_DIR / 'db.sqlite3',         # Файл БД SQLite в корне проекта
+        }
+    }

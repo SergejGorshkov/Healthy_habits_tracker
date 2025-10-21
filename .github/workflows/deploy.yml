@@ -116,11 +116,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-
-
           REDIS_URL: redis://redis:6379
           CELERY_BROKER_URL: redis://redis:6379
-
 
         run: python manage.py test  # Команда Django для запуска тестового набора
 ################################################################################################################
@@ -167,7 +164,12 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker
+            # Создаем и переходим в рабочую директорию
+            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
+            mkdir -p $PROJECT_DIR
+            cd $PROJECT_DIR
+            echo "Текущая директория: $(pwd)"
+            echo "Содержимое директории: $(ls -la)"
             
             # Создание файла .env
             cat > .env << EOF
