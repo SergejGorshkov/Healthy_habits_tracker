@@ -103,7 +103,7 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_HOST: 127.0.0.1
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
         run: python manage.py migrate  # Команда Django для применения миграций БД
 
@@ -114,7 +114,7 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_HOST: 127.0.0.1
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           REDIS_URL: redis://redis:6379
           CELERY_BROKER_URL: redis://redis:6379
@@ -155,8 +155,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      # Установка SSH для подключения к серверу
-      - name: Set up SSH
+      # Деплой приложения на сервер с docker-compose
+      - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -173,15 +173,20 @@ jobs:
             
             # Создание файла .env
             cat > .env << EOF
+            # Database
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_HOST=localhost
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_HOST=127.0.0.1
+            # Django
             SECRET_KEY=${{ secrets.SECRET_KEY }}
-            CELERY_BROKER_URL=redis://localhost:6379
-            CELERY_RESULT_BACKEND=redis://localhost:6379
-            REDIS_URL=redis://localhost:6379
+            DEBUG=False
+            # Redis
+            CELERY_BROKER_URL=redis://redis:6379
+            CELERY_RESULT_BACKEND=redis://redis:6379
+            REDIS_URL=redis://redis:6379
+            # Telegram
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
             EOF
             
