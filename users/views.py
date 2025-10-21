@@ -54,7 +54,9 @@ class UserViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """Изменение данных пользователя (т.к. в модели User переопределили логин с username на email)"""
-        user = serializer.save(is_active=True)  # создание пользователя и его активация в БД
+        # создание пользователя и его активация в БД
+        user = serializer.save(is_active=True)  # noqa: F841
+    # переменная user не используется, но ошибка игнорируется Flake8
 
     @action(detail=False, methods=["get"])
     def profile(self, request):

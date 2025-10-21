@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+venv
+.venv
+.idea
+.flake8
+__pycache__
+*.pyc
+test_db.sqlite3

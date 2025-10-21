@@ -94,11 +94,11 @@ SIMPLE_JWT = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.getenv("DATABASE_NAME"),
-        "USER": os.getenv("DATABASE_USER", default="postgres"),
-        "PASSWORD": os.getenv("DATABASE_PASSWORD"),
-        "HOST": os.getenv("DATABASE_HOST", default="localhost"),
-        "PORT": os.getenv("DATABASE_PORT", default="5432"),
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER", default="postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST", default="localhost"),
+        "PORT": os.getenv("POSTGRES_PORT", default="5432"),
     }
 }
 
@@ -137,7 +137,8 @@ USE_TZ = True  # Включение поддержки временных зон
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"  # Маршрут к папке со статическими файлами
-STATICFILES_DIRS = (BASE_DIR / "static",)  # Список папок на диске, из которых будут подгружаться статические файлы
+# STATICFILES_DIRS = (BASE_DIR / "static",)  # Список папок на диске, из которых будут подгружаться статические файлы
+STATIC_ROOT = BASE_DIR / "static"  # Путь к папке на удаленном сервере, куда будут сохраняться статические файлы
 
 MEDIA_URL = "/media/"  # Путь к папке с медиафайлами
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # Путь к папке на диске с медиафайлами, загружаемыми пользователем
