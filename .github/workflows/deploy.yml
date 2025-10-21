@@ -183,14 +183,11 @@ jobs:
             CELERY_RESULT_BACKEND=redis://redis:6379
             REDIS_URL=redis://redis:6379
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
-            DEBUG=False
             EOF
-            
             
             # Остановка и удаление старого контейнера
             sudo docker stop myapp || echo "Контейнер myapp не был запущен"
             sudo docker rm myapp || echo "Контейнер myapp не был найден"
-            
             
             # Деплой контейнера с приложением на сервере
             sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
@@ -199,8 +196,6 @@ jobs:
             -p 80:8000 \
             --env-file .env \
             ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-
-
 
             # Очистка старых образов
             sudo docker image prune -f
