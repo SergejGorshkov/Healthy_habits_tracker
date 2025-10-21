@@ -176,12 +176,12 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_HOST=db
+            POSTGRES_HOST=localhost
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
-            CELERY_BROKER_URL=redis://redis:6379
-            CELERY_RESULT_BACKEND=redis://redis:6379
-            REDIS_URL=redis://redis:6379
+            CELERY_BROKER_URL=redis://localhost:6379
+            CELERY_RESULT_BACKEND=redis://localhost:6379
+            REDIS_URL=redis://localhost:6379
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
             EOF
             
