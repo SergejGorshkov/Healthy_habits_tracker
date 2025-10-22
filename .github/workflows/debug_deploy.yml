@@ -1,7 +1,13 @@
-name: Healthy habits tracker CI  # имя workflow
-on: [ push ]  # события, на которых будет запускаться workflow
+name: Deploy Django App to Yandex Cloud
 
-# контейнер для задач
+on:
+  push:
+    branches: [ main, develop ]  # Триггер на пуш в main/develop ветки
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp  # Имя Docker образа (напр. myapp в директории test)
+  COMPOSE_FILE: docker-compose.yml  # указывает, что использовать docker-compose.yml (в текущей директории) при деплое
+
 jobs:
   # Определение job с именем "lint", который выполняет проверку кода на соответствие стандартам PEP8
   lint:
@@ -86,15 +92,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Шаг 5: Ожидание полного запуска контейнеров PostgreSQL и Redis (для выполнения миграций и тестов),
-      # чтобы приложение не пыталось подключиться к БД или к кешу до того, как она будет готова принимать соединения.
+      # Шаг 5: Ожидание полного запуска контейнера PostgreSQL (для выполнения миграций и тестов),
+      # чтобы приложение не пыталось подключиться к БД до того, как она будет готова принимать соединения.
       - name: Wait for Postgres
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do
             echo "Waiting for Postgres..."
             sleep 3
           done
-
 
       # Шаг 6: Применение миграций базы данных
       - name: Run migrations
@@ -104,7 +109,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: 127.0.0.1
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_PORT: 5432  # ${{ secrets.POSTGRES_PORT }}
         run: python manage.py migrate  # Команда Django для применения миграций БД
 
       # Шаг 7: Запуск тестов для проверки работоспособности приложения
@@ -115,100 +120,137 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: 127.0.0.1
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_PORT: 5432  # ${{ secrets.POSTGRES_PORT }}
           REDIS_URL: redis://redis:6379
           CELERY_BROKER_URL: redis://redis:6379
 
         run: python manage.py test  # Команда Django для запуска тестового набора
 ################################################################################################################
-  # Определение job с именем "build", которая выполняет сборку и интеграцию Docker-образа
-  build:
-    # Указание ОС для запуска (последняя версия Ubuntu)
+  # Job для сборки и публикации Docker образа
+  build-and-push:
     runs-on: ubuntu-latest
     needs: test  # Зависимость: выполняется только если задача 'test' успешна
-
-    # Последовательность операций внутри job "build"
     steps:
-      # Шаг 1: Получение кода из репозитория
-      - name: Check out code
-        # Использование официального action для клонирования репозитория
+      - name: Checkout code  # Клонирование репозитория с исходным кодом
         uses: actions/checkout@v4
 
-      # Шаг 2: Авторизация в Docker Hub с использованием секретного токена
-      - name: Log in to Docker Hub
-        # Команда для входа в DockerHub, использующая секретный токен доступа и имя пользователя DockerHub
-        run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Set up Docker Buildx  # Настраивание Buildx для мульти-архитектурной сборки
+        uses: docker/setup-buildx-action@v3
 
-      # Шаг 3: Сборка Docker образа, используя тег из последнего коммита
-      - name: Build Docker image
-        # Команда сборки образа с тегом, содержащим: имя пользователя Docker Hub, имя приложения "myapp" и хэш коммита
-        # для уникальной идентификации
-        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} .
+      - name: Login to DockerHub  # Логин в DockerHub для публикации образа
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Логин из GitHub Secrets
+          password: ${{ secrets.DOCKERHUB_TOKEN }}  # Токен из GitHub Secrets
 
-      # Шаг 4: Публикация собранного образа в Docker Hub
-      - name: Push Docker image to Docker Hub
-        # Команда отправки собранного образа в реестр Docker Hub
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+      - name: Build and push Docker image  # Сборка и публикация в DockerHub образа с приложением
+        uses: docker/build-push-action@v5
+        with:  # Описание сборки
+          context: .  # Контекст сборки - текущая директория
+          file: ./Dockerfile  # Файл Dockerfile для сборки (в текущей директории)
+          push: true  # Автоматическая публикация собранного образа в DockerHub после успешной сборки
+          tags: |  # Список тегов для образа
+            ${{ env.DOCKER_IMAGE }}:latest  # Всегда указывает на самую свежую версию образа
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}  # Создает уникальный тег для каждого коммита
+          # Кэширование слоев для ускорения сборки (использует слои из образа :latest в registry как кэш)
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
+          cache-to: type=inline  # Сохранение информации о кэше внутри собранного образа
 ################################################################################################################
-  # Задача деплоя (запускается только после успешной сборки Docker-образа)
+  # Job для деплоя на виртуальную машину
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-and-push  # Зависит от успешной сборки
     steps:
-      # Деплой приложения на сервер с docker-compose
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Checkout code  # Клонирование репозитория с исходным кодом
+        uses: actions/checkout@v4
+
+      - name: Create project directory on server  # Создание директории проекта на сервере
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            sudo mkdir -p /app/healthy_habits_tracker
+            sudo chown $USER:$USER /app/healthy_habits_tracker
+
+      - name: Copy configuration files to VM  # Копирование конфигурационных файлов на VM
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}  # IP VM из Secrets
+          username: ${{ secrets.SSH_USER }}  # Пользователь VM
+          key: ${{ secrets.SSH_KEY }}  # Приватный ключ для SSH
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}  # Пароль от приватного ключа
+          source: "docker-compose.yml,nginx.conf"  # Копируемые файлы
+          target: "/app/healthy_habits_tracker/"  # Целевая директория на сервере
+          overwrite: true  # Перезаписываем существующие файлы
+
+      - name: Create .env file on server  # Создание .env файла на сервере из переменных в GitHub Secrets
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            # Создаем и переходим в рабочую директорию
-            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
-            mkdir -p $PROJECT_DIR
-            cd $PROJECT_DIR
-            echo "Текущая директория: $(pwd)"
-            echo "Содержимое директории: $(ls -la)"
-            
-            # Создание файла .env
-            cat > .env << EOF
+            cd /app/healthy_habits_tracker
+            cat > .env << 'EOF'
             # Database
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-            POSTGRES_HOST=127.0.0.1
             # Django
             SECRET_KEY=${{ secrets.SECRET_KEY }}
-            DEBUG=False
             # Redis
             CELERY_BROKER_URL=redis://redis:6379
             CELERY_RESULT_BACKEND=redis://redis:6379
             REDIS_URL=redis://redis:6379
             # Telegram
             TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
+            DEBUG=False
             EOF
-            
-            # Остановка и удаление старого контейнера
-            sudo docker stop myapp || echo "Контейнер myapp не был запущен"
-            sudo docker rm myapp || echo "Контейнер myapp не был найден"
-            
-            # Деплой контейнера с приложением на сервере
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-            sudo docker run -d \
-            --name myapp \
-            -p 80:8000 \
-            --env-file .env \
-            ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} \
-            python manage.py runserver 0.0.0.0:8000
 
-             # Ждем и проверяем
-            sleep 10
-            echo "=== Container status ==="
-            sudo docker ps -a
-            echo "=== Container logs ==="
-            sudo docker logs myapp || echo "No logs available"
+      - name: Deploy application on server  # Деплой приложения на сервер
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            # Переходим в директорию проекта
+            cd /app/healthy_habits_tracker
             
-            # Очистка старых образов
-            sudo docker image prune -f
+            # Вход в DockerHub
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            
+            # Останавливаем текущие контейнеры
+            echo "Stopping existing containers..."
+            docker-compose down || true
+            
+            # Пуллим последний образ приложения
+            echo "Pulling latest application image..."
+            docker pull ${{ env.DOCKER_IMAGE }}:latest
+            
+            # Запускаем сервисы в фоновом режиме
+            echo "Starting services with docker-compose..."
+            docker-compose up -d
+            
+            sleep 10
+            
+            # Выполняем миграции БД (на всякий случай)
+            echo "Running database migrations..."
+            docker-compose exec -T web python manage.py migrate || echo "Migrations might have failed, continuing..."
+            
+            # Собираем статику
+            echo "Collecting static files..."
+            docker-compose exec -T web python manage.py collectstatic --no-input --clear || echo "Static collection might have failed, continuing..."
+            
+            # Проверяем статус сервисов
+            echo "Checking services status..."
+            docker-compose ps
+            
+            # Очищаем неиспользуемые образы
+            echo "Cleaning up unused images..."
+            docker image prune -f
