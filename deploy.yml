@@ -203,7 +203,7 @@ jobs:
             ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} \
             python manage.py runserver 0.0.0.0:8000
 
-             # Ждем и проверяем
+            # Ждем и проверяем
             sleep 10
             echo "=== Container status ==="
             sudo docker ps -a
