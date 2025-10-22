@@ -233,6 +233,23 @@ jobs:
             echo "Stopping existing containers..."
             docker-compose down || true
             
+            
+            
+            # Удаляем старый контейнер myapp если он существует
+            docker stop myapp || true
+            docker rm myapp || true
+            
+            # Очищаем сетевые подключения
+            docker network prune -f
+            
+            # Проверяем занятые порты
+            echo "Checking used ports..."
+            netstat -tulpn | grep :80 || echo "Port 80 is free"
+            netstat -tulpn | grep :5432 || echo "Port 5432 is free"
+            netstat -tulpn | grep :6379 || echo "Port 6379 is free"
+            
+            
+            
             # Пуллим последний образ приложения
             echo "Pulling latest application image..."
             docker pull ${{ env.DOCKER_IMAGE }}:latest

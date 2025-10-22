@@ -11,8 +11,8 @@ services:
      volumes:
        - postgres_data:/var/lib/postgresql/data
      # Порты для взаимодействия с контейнером БД и хостом
-     ports:
-       - "${POSTGRES_PORT}:5432"
+#     ports:
+#       - "${POSTGRES_PORT}:5432"
      # Проверка здоровья сервиса БД
      healthcheck:
        test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
@@ -23,8 +23,8 @@ services:
   # Сервис Redis для хранения данных Celery и других асинхронных задач
   redis:
      image: redis:7-alpine
-     ports:
-       - "6379:6379"  # Перенаправление порта 6379 контейнера на стандартный порт 6379 на хосте
+#     ports:
+#       - "6379:6379"  # Перенаправление порта 6379 контейнера на стандартный порт 6379 на хосте
     # Проверка здоровья сервиса redis
      healthcheck:
        test: redis-cli ping  # Проверка подключения к Redis с помощью ping команды
@@ -52,8 +52,8 @@ services:
            condition: service_healthy
        redis:
            condition: service_healthy
-     ports:  # Перенаправление порта 8000 контейнера на порт 8080 на хосте
-       - "8080:8000"
+#     ports:  # Перенаправление порта 8000 контейнера на порт 8080 на хосте
+#       - "8080:8000"
 #############################################################################################
   # Сервис для сбора статики
   static_collector:
