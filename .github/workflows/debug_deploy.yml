@@ -140,8 +140,8 @@ jobs:
       - name: Login to DockerHub  # Логин в DockerHub для публикации образа
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Логин из GitHub Secrets
-          password: ${{ secrets.DOCKERHUB_TOKEN }}  # Токен из GitHub Secrets
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}  # Логин из GitHub Secrets
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}  # Токен из GitHub Secrets
 
       - name: Build and push Docker image  # Сборка и публикация в DockerHub образа с приложением
         uses: docker/build-push-action@v5
@@ -223,7 +223,7 @@ jobs:
             cd /app/healthy_habits_tracker
             
             # Вход в DockerHub
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
             
             # Останавливаем текущие контейнеры
             echo "Stopping existing containers..."
