@@ -184,7 +184,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}  # Пользователь VM
           key: ${{ secrets.SSH_KEY }}  # Приватный ключ для SSH
           passphrase: ${{ secrets.SSH_PASSPHRASE }}  # Пароль от приватного ключа
-          source: "docker-compose.yml,nginx.conf,Dockerfile"  # Копируемые файлы
+          source: "docker-compose.yml,nginx.conf,Dockerfile,requirements.txt"  # Копируемые файлы
           target: "/app/"  # Целевая директория на сервере
           overwrite: true  # Перезаписываем существующие файлы
 
@@ -203,6 +203,7 @@ jobs:
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_HOST=db
             # Django
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             # Redis
