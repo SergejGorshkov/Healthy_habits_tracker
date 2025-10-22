@@ -174,7 +174,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            sudo mkdir -p /app/healthy_habits_tracker
+            sudo mkdir -p /home/${{ secrets.SSH_USER }}/app/healthy_habits_tracker
             sudo chown $USER:$USER /app/healthy_habits_tracker
 
       - name: Copy configuration files to VM  # Копирование конфигурационных файлов на VM
@@ -185,7 +185,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}  # Приватный ключ для SSH
           passphrase: ${{ secrets.SSH_PASSPHRASE }}  # Пароль от приватного ключа
           source: "docker-compose.yml,nginx.conf"  # Копируемые файлы
-          target: "/app/healthy_habits_tracker/"  # Целевая директория на сервере
+          target: "/home/${{ secrets.SSH_USER }}/app/healthy_habits_tracker/"  # Целевая директория на сервере
           overwrite: true  # Перезаписываем существующие файлы
 
       - name: Create .env file on server  # Создание .env файла на сервере из переменных в GitHub Secrets
@@ -196,7 +196,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd /app/healthy_habits_tracker
+            cd /home/${{ secrets.SSH_USER }}/app/healthy_habits_tracker
             cat > .env << 'EOF'
             # Database
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
@@ -223,7 +223,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Переходим в директорию проекта
-            cd /app/healthy_habits_tracker
+            cd /home/${{ secrets.SSH_USER }}/app/healthy_habits_tracker
             
             # Вход в DockerHub
             echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
