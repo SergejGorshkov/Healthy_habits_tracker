@@ -172,6 +172,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             sudo mkdir -p /app/healthy_habits_tracker
             sudo chown $USER:$USER /app/healthy_habits_tracker
