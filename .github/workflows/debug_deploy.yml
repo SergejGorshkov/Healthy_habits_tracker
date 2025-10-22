@@ -184,7 +184,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}  # Пользователь VM
           key: ${{ secrets.SSH_KEY }}  # Приватный ключ для SSH
           passphrase: ${{ secrets.SSH_PASSPHRASE }}  # Пароль от приватного ключа
-          source: "docker-compose.yml,nginx.conf"  # Копируемые файлы
+          source: "docker-compose.yml,nginx.conf,Dockerfile"  # Копируемые файлы
           target: "/app/"  # Целевая директория на сервере
           overwrite: true  # Перезаписываем существующие файлы
 
