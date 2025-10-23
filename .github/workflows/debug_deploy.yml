@@ -6,7 +6,6 @@ on:
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp  # Имя Docker образа (напр. myapp в директории test)
-#  COMPOSE_FILE: docker-compose.yml  # указывает, что использовать docker-compose.yml (в текущей директории) при деплое
 
 jobs:
   # Определение job с именем "lint", который выполняет проверку кода на соответствие стандартам PEP8
