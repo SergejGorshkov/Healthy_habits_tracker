@@ -215,6 +215,23 @@ jobs:
             DEBUG=False
             EOF
 
+      - name: Check container logs
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /app
+            echo "=== Web container logs ==="
+            docker-compose logs web || echo "No web logs"
+            echo "=== Static collector logs ==="
+            docker-compose logs static_collector || echo "No static collector logs"
+            echo "=== Celery logs ==="
+            docker-compose logs celery || echo "No celery logs"
+
+
       - name: Deploy application on server  # Деплой приложения на сервер
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -239,24 +256,21 @@ jobs:
             
             # Запускаем сервисы в фоновом режиме
             echo "Starting services with docker-compose..."
-            docker-compose up -d
+            docker-compose up -d --build
             
             sleep 10
             
-            # Собираем статику
-            echo "Collecting static files..."
-            docker-compose exec -T web python manage.py collectstatic --no-input --clear || echo "Static collection might have failed, continuing..."
-            
+                    
             # Проверяем статус сервисов
             echo "Checking services status..."
             docker-compose ps
             
             # Ждем и проверяем
-            sleep 10
-            echo "=== Container status ==="
-            sudo docker ps -a
+
             echo "=== Container logs ==="
-            sudo docker logs myapp || echo "No logs available"
+            sudo docker logs web || echo "No logs available"
+            sudo docker logs nginx || echo "No nginx logs available"
+            sudo docker logs celery || echo "No logs available"
             
             # Очищаем неиспользуемые образы
             echo "Cleaning up unused images..."
