@@ -132,7 +132,12 @@ jobs:
   # Job для сборки и публикации Docker образа
   build-and-push:
     runs-on: ubuntu-latest
+
+
 #    needs: test  # Зависимость: выполняется только если задача 'test' успешна
+
+
+
     steps:
       - name: Checkout code  # Клонирование репозитория с исходным кодом
         uses: actions/checkout@v4
@@ -296,7 +301,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Создаем и переходим в рабочую директорию
-            PROJECT_DIR="/app"
+            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
             mkdir -p $PROJECT_DIR
             cd $PROJECT_DIR
             
@@ -320,8 +325,8 @@ jobs:
             EOF
             
             # Копируем необходимые файлы
-            cp /app/docker-compose.yml .
-            cp /app/nginx.conf .
+            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/docker-compose.yml .
+            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/nginx.conf .
             
             # Останавливаем и удаляем старые контейнеры
             sudo docker-compose down || true
