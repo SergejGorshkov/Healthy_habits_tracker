@@ -144,6 +144,7 @@
 
 services:
   db:
+    container_name: db
     image: postgres:16.0
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
@@ -158,6 +159,7 @@ services:
       retries: 5
 
   redis:
+    container_name: redis
     image: redis:7-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -169,6 +171,7 @@ services:
       - redis_data:/data
 
   web:
+    container_name: web
     build: .
     command: >
       sh -c "
@@ -194,6 +197,7 @@ services:
   #   ...
 
   nginx:
+    container_name: nginx
     image: nginx:1.19.3
     ports:
       - "80:80"
@@ -206,6 +210,7 @@ services:
       - django_media:/usr/share/nginx/html/media/
 
   celery:
+    container_name: celery
     build: .
     command: celery -A config worker --loglevel=info
     env_file: .env
@@ -223,6 +228,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/1
 
   celery-beat:
+    container_name: celery-beat
     build: .
     command: celery -A config beat --loglevel=info
     env_file: .env
