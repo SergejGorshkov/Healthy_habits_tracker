@@ -6,14 +6,13 @@ on:
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp  # Имя Docker образа (напр. myapp в директории test)
-  COMPOSE_FILE: docker-compose.yml  # указывает, что использовать docker-compose.yml (в текущей директории) при деплое
+#  COMPOSE_FILE: docker-compose.yml  # указывает, что использовать docker-compose.yml (в текущей директории) при деплое
 
 jobs:
   # Определение job с именем "lint", который выполняет проверку кода на соответствие стандартам PEP8
   lint:
     # Запуск на последней версии Ubuntu
     runs-on: ubuntu-latest
-#    if: ${{ !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
 
     # Последовательность операций внутри job "lint"
     steps:
@@ -297,7 +296,8 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Создаем и переходим в рабочую директорию
-            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
+#            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
+            PROJECT_DIR=/app
             mkdir -p $PROJECT_DIR
             cd $PROJECT_DIR
             
@@ -321,8 +321,10 @@ jobs:
             EOF
             
             # Копируем необходимые файлы
-            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/docker-compose.yml .
-            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/nginx.conf .
+#            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/docker-compose.yml .
+#            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/nginx.conf .
+            cp /app/docker-compose.yml .
+            cp /app/nginx.conf .
             
             # Останавливаем и удаляем старые контейнеры
             sudo docker-compose down || true
