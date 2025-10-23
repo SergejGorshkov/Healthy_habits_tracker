@@ -142,6 +142,117 @@
 #   redis_data:  # Том для хранения данных Redis
 
 
+#services:
+#  db:
+#    container_name: db
+#    image: postgres:16.0
+#    environment:
+#      - POSTGRES_DB=${POSTGRES_DB}
+#      - POSTGRES_USER=${POSTGRES_USER}
+#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+#      timeout: 10s
+#      interval: 10s
+#      retries: 5
+#
+#  redis:
+#    container_name: redis
+#    image: redis:7-alpine
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 1s
+#      timeout: 1s
+#      retries: 5
+#      start_period: 5s
+#    volumes:
+#      - redis_data:/data
+#
+#  web:
+#    container_name: web
+#    build: .
+#    command: >
+#      sh -c "
+#      python manage.py migrate &&
+#      python manage.py collectstatic --no-input --clear &&
+#      python manage.py runserver 0.0.0.0:8000
+#      "
+#    env_file: .env
+#    environment:
+#      - POSTGRES_HOST=db
+#      - REDIS_URL=redis://redis:6379
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#    volumes:
+#      - django_static:/app/static/
+#      - django_media:/app/media/
+#    working_dir: /app
+#
+#
+#
+#
+#  nginx:
+#    container_name: nginx
+#    image: nginx:1.19.3
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      web:
+#        condition: service_started
+#    volumes:
+#      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+#      - django_static:/usr/share/nginx/html/static/
+#      - django_media:/usr/share/nginx/html/media/
+#
+#  celery:
+#    container_name: celery
+#    build: .
+#    command: celery -A config worker --loglevel=info
+#    env_file: .env
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      web:
+#        condition: service_started
+#    environment:
+#      - POSTGRES_HOST=db
+#      - POSTGRES_PORT=${POSTGRES_PORT}
+#      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+#      - CELERY_BROKER_URL=redis://redis:6379/1
+#
+#  celery-beat:
+#    container_name: celery-beat
+#    build: .
+#    command: celery -A config beat --loglevel=info
+#    env_file: .env
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      web:
+#        condition: service_started
+#    environment:
+#      - POSTGRES_HOST=db
+#      - POSTGRES_PORT=${POSTGRES_PORT}
+#      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+#      - CELERY_BROKER_URL=redis://redis:6379/0
+#
+#volumes:
+#  postgres_data:
+#  django_static:
+#  django_media:
+#  redis_data:
+
+
+
 services:
   db:
     container_name: db
@@ -193,17 +304,13 @@ services:
       - django_media:/app/media/
     working_dir: /app
 
-
-
-
   nginx:
     container_name: nginx
     image: nginx:1.19.3
     ports:
       - "80:80"
     depends_on:
-      web:
-        condition: service_started
+      - web
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - django_static:/usr/share/nginx/html/static/
@@ -212,38 +319,40 @@ services:
   celery:
     container_name: celery
     build: .
-    command: celery -A config worker --loglevel=info
+    command: >
+      sh -c "
+      celery -A config worker --loglevel=info
+      "
     env_file: .env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      web:
-        condition: service_started
+      - db
+      - redis
+      - web
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - CELERY_BROKER_URL=redis://redis:6379/1
+    working_dir: /app
 
   celery-beat:
     container_name: celery-beat
     build: .
-    command: celery -A config beat --loglevel=info
+    command: >
+      sh -c "
+      celery -A config beat --loglevel=info
+      "
     env_file: .env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      web:
-        condition: service_started
+      - db
+      - redis
+      - web
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+    working_dir: /app
 
 volumes:
   postgres_data:
