@@ -296,7 +296,6 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             # Создаем и переходим в рабочую директорию
-#            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
             PROJECT_DIR="/app"
             mkdir -p $PROJECT_DIR
             cd $PROJECT_DIR
