@@ -13,7 +13,7 @@ jobs:
   lint:
     # Запуск на последней версии Ubuntu
     runs-on: ubuntu-latest
-    if: ${{ !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
+#    if: ${{ !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
 
     # Последовательность операций внутри job "lint"
     steps:
@@ -37,7 +37,7 @@ jobs:
   # Определение job с именем "test", которая выполняет тестирование приложения
   test:
     runs-on: ubuntu-latest  # Указывает, что job будет запущен на последней версии Ubuntu
-    if: ${{ !cancelled() && !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
+#    if: ${{ !cancelled() && !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
 
     needs: lint  # Зависимость: выполняется только если задача 'lint' успешна
     # Определение контейнеров с сервисами, которые будут запущены вместе с job "test"

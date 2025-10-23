@@ -191,10 +191,10 @@ services:
     volumes:
       - django_static:/app/static/
       - django_media:/app/media/
+    working_dir: /app
 
-  # УБЕРИТЕ static_collector - объединим со web
-  # static_collector:
-  #   ...
+
+
 
   nginx:
     container_name: nginx
