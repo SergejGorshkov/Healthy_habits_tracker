@@ -3,7 +3,6 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-# from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -144,9 +143,20 @@ STATIC_ROOT = BASE_DIR / "static"  # Путь к папке на удаленн�
 MEDIA_URL = "/media/"  # Путь к папке с медиафайлами
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # Путь к папке на диске с медиафайлами, загружаемыми пользователем
 
-# Максимальный размер загружаемых файлов
+# Настройки приложения для защиты от DoS-атак через отправку больших объемов данных:
+# Ограничение размера данных форм и JSON, которые обрабатываются в оперативной памяти.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
+# Ограничение размера загружаемых файлов, которые сохраняются на диске.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+# Максимальное количество полей в форме/JSON
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 150
+# Максимальное количество файлов, которые будут храниться в оперативной памяти при множественной загрузке файлов.
+FILE_UPLOAD_MAX_MEMORY_FILES = 10
+# Каталог для временных файлов, куда сохраняются файлы, которые превышают размер FILE_UPLOAD_MAX_MEMORY_SIZE
+FILE_UPLOAD_TEMP_DIR = '/tmp/django_uploads'
+# Автоматическое создание директории при старте проекта
+temp_dir = Path(FILE_UPLOAD_TEMP_DIR)  # Преобразование строки в объект Path
+temp_dir.mkdir(exist_ok=True, mode=0o755)  # Создание директории с правами на чтение и запись для всех
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -157,8 +167,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"  # По умолчанию 
 AUTH_USER_MODEL = "users.User"  # Для аутентификации используется собственный класс User
 
 
-# Настройки для Celery
-
+# Настройки для Celery:
 # URL-адрес брокера сообщений
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")  # Например, Redis, который по умолчанию работает на порту 6379
 # URL-адрес брокера результатов, также Redis
