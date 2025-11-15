@@ -1,0 +1,350 @@
+name: Deploy Django App to Yandex Cloud
+
+on:
+  push:
+    branches: [ main, develop ]  # Триггер на пуш в main/develop ветки
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/myapp  # Имя Docker образа (напр. myapp в директории test)
+  COMPOSE_FILE: docker-compose.yml  # указывает, что использовать docker-compose.yml (в текущей директории) при деплое
+
+jobs:
+  # Определение job с именем "lint", который выполняет проверку кода на соответствие стандартам PEP8
+  lint:
+    # Запуск на последней версии Ubuntu
+    runs-on: ubuntu-latest
+
+    # Последовательность операций внутри job "lint"
+    steps:
+      # Шаг 1: Клонирование репозитория с исходным кодом
+      - name: Check out code
+        uses: actions/checkout@v4
+      # Шаг 2: Установка Python нужной версии
+      - name: Set up Python
+        uses: actions/setup-python@v4  # Устанавливает Python
+        with:
+          python-version: '3.12'  # Конкретная версия Python для использования
+      # Шаг 3: Обновление pip до последней версии и установка линтера flake8
+      - name: Install flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+      # Шаг 4: Запуск проверки кода в текущей директории с помощью flake8 на соответствие PEP8
+      - name: Run flake8
+        run: flake8 .
+################################################################################################################
+#  # Определение job с именем "test", которая выполняет тестирование приложения
+#  test:
+#    runs-on: ubuntu-latest  # Указывает, что job будет запущен на последней версии Ubuntu
+##    if: ${{ !cancelled() && !inputs.skip-tests }}  # Проверка на наличие флага skip-tests
+#
+#    needs: lint  # Зависимость: выполняется только если задача 'lint' успешна
+#    # Определение контейнеров с сервисами, которые будут запущены вместе с job "test"
+#    services:
+#      postgres:  # Установка PostgreSQL
+#        image: postgres:16.0
+#        env:
+#          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+#          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+#          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+#        ports:
+#          - "5432:5432"
+#        options: >-
+#          --health-cmd "pg_isready -U postgres"
+#          --health-interval 10s
+#          --health-timeout 5s
+#          --health-retries 5
+#
+#      redis:  # Установка Redis для кэширования
+#        image: redis:7-alpine
+#        ports:
+#          - "6379:6379"
+#        options: >-
+#          --health-cmd "redis-cli ping"
+#          --health-interval 10s
+#          --health-timeout 5s
+#          --health-retries 5
+#
+#    # Последовательность операций внутри job "test"
+#    steps:
+#      # Шаг 1: Клонирование репозитория с исходным кодом
+#      - name: Check out code
+#        uses: actions/checkout@v4
+#
+#      # Шаг 2: Установка Python нужной версии
+#      - name: Set up Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: '3.12'
+#
+#      # Шаг 3: Кэширование pip пакетов для ускорения последующих запусков
+#      - name: Cache pip
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.cache/pip  # Путь к кэшу с зависимостями pip
+#          # Уникальный ключ кэша на основе ОС и хэша requirements.txt
+#          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+#          # Резервный ключ для поиска кэша, если точный ключ не найден
+#          restore-keys: |
+#            ${{ runner.os }}-pip-
+#
+#      # Шаг 4: Установка зависимостей Python из файла requirements.txt
+#      - name: Install dependencies
+#        # Команда для выполнения в shell: 1) обновление pip до последней версии; 2) установка пакетов из requirements.txt
+#        run: |
+#          python -m pip install --upgrade pip
+#          pip install -r requirements.txt
+#
+#      # Шаг 5: Ожидание полного запуска контейнера PostgreSQL (для выполнения миграций и тестов),
+#      # чтобы приложение не пыталось подключиться к БД до того, как она будет готова принимать соединения.
+#      - name: Wait for Postgres
+#        run: |
+#          until pg_isready -h localhost -p 5432 -U postgres; do
+#            echo "Waiting for Postgres..."
+#            sleep 3
+#          done
+#
+#      # Шаг 6: Применение миграций базы данных
+#      - name: Run migrations
+#        env:
+#          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+#          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+#          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+#          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+#          POSTGRES_HOST: 127.0.0.1
+#          POSTGRES_PORT: 5432  # ${{ secrets.POSTGRES_PORT }}
+#        run: python manage.py migrate  # Команда Django для применения миграций БД
+#
+#      # Шаг 7: Запуск тестов для проверки работоспособности приложения
+#      - name: Run tests
+#        env:
+#          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+#          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+#          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+#          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+#          POSTGRES_HOST: 127.0.0.1
+#          POSTGRES_PORT: 5432  # ${{ secrets.POSTGRES_PORT }}
+#          REDIS_URL: redis://redis:6379
+#          CELERY_BROKER_URL: redis://redis:6379
+#
+#        run: python manage.py test  # Команда Django для запуска тестового набора
+################################################################################################################
+  # Job для сборки и публикации Docker образа
+  build-and-push:
+    runs-on: ubuntu-latest
+
+
+#    needs: test  # Зависимость: выполняется только если задача 'test' успешна
+
+
+
+    steps:
+      - name: Checkout code  # Клонирование репозитория с исходным кодом
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx  # Настраивание Buildx для мульти-архитектурной сборки
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub  # Логин в DockerHub для публикации образа
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}  # Логин из GitHub Secrets
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}  # Токен из GitHub Secrets
+
+      - name: Build and push Docker image  # Сборка и публикация в DockerHub образа с приложением
+        uses: docker/build-push-action@v5
+        with:  # Описание сборки
+          context: .  # Контекст сборки - текущая директория
+          file: ./Dockerfile  # Файл Dockerfile для сборки (в текущей директории)
+          push: true  # Автоматическая публикация собранного образа в DockerHub после успешной сборки
+          # Список тегов для образа. Всегда указывает на самую свежую версию образа.
+          # Создает уникальный тег для каждого коммита
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          # Кэширование слоев для ускорения сборки (использует слои из образа latest в registry как кэш)
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
+          cache-to: type=inline  # Сохранение информации о кэше внутри собранного образа
+################################################################################################################
+  # Job для деплоя на виртуальную машину
+#  deploy:
+#    runs-on: ubuntu-latest
+#    needs: build-and-push  # Зависит от успешной сборки
+#    steps:
+#      - name: Checkout code  # Клонирование репозитория с исходным кодом
+#        uses: actions/checkout@v4
+#
+#      - name: Create project directory on server  # Создание директории проекта на сервере
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.SERVER_IP }}
+#          username: ${{ secrets.SSH_USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#          script: |
+#            sudo mkdir -p /app
+#            sudo chown $USER:$USER /app
+#
+#      - name: Copy configuration files to VM  # Копирование конфигурационных файлов на VM
+#        uses: appleboy/scp-action@v0.1.4
+#        with:
+#          host: ${{ secrets.SERVER_IP }}  # IP VM из Secrets
+#          username: ${{ secrets.SSH_USER }}  # Пользователь VM
+#          key: ${{ secrets.SSH_KEY }}  # Приватный ключ для SSH
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}  # Пароль от приватного ключа
+#          source: "docker-compose.yml,nginx.conf,Dockerfile,requirements.txt"  # Копируемые файлы
+#          target: "/app/"  # Целевая директория на сервере
+#          overwrite: true  # Перезаписываем существующие файлы
+#
+#      - name: Create .env file on server  # Создание .env файла на сервере из переменных в GitHub Secrets
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.SERVER_IP }}
+#          username: ${{ secrets.SSH_USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#          script: |
+#            cd /app
+#            cat > .env << 'EOF'
+#            # Database
+#            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+#            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+#            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+#            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+#            POSTGRES_HOST=db
+#            # Django
+#            SECRET_KEY=${{ secrets.SECRET_KEY }}
+#            # Redis
+#            CELERY_BROKER_URL=redis://redis:6379
+#            CELERY_RESULT_BACKEND=redis://redis:6379
+#            REDIS_URL=redis://redis:6379
+#            # Telegram
+#            TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
+#            DEBUG=False
+#            EOF
+#
+#      - name: Check container logs
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.SERVER_IP }}
+#          username: ${{ secrets.SSH_USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#          script: |
+#            cd /app
+#            echo "=== Web container logs ==="
+#            docker-compose logs web || echo "No web logs"
+#            echo "=== Static collector logs ==="
+#            docker-compose logs static_collector || echo "No static collector logs"
+#            echo "=== Celery logs ==="
+#            docker-compose logs celery || echo "No celery logs"
+#
+#
+#      - name: Deploy application on server  # Деплой приложения на сервер
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.SERVER_IP }}
+#          username: ${{ secrets.SSH_USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+#          script: |
+#            # Переходим в директорию проекта
+#            cd /app
+#
+#            # Вход в DockerHub
+#            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+#
+#            # Останавливаем текущие контейнеры
+#            echo "Stopping existing containers..."
+#            docker-compose down || true
+#
+#            # Пуллим последний образ приложения
+#            echo "Pulling latest application image..."
+#            docker pull ${{ env.DOCKER_IMAGE }}:latest
+#
+#            # Запускаем сервисы в фоновом режиме
+#            echo "Starting services with docker-compose..."
+#            docker-compose up -d --build
+#
+#            sleep 10
+#
+#
+#            # Проверяем статус сервисов
+#            echo "Checking services status..."
+#            docker-compose ps
+#
+#            # Ждем и проверяем
+#
+#            echo "=== Container logs ==="
+#            sudo docker logs web || echo "No logs available"
+#            sudo docker logs nginx || echo "No nginx logs available"
+#            sudo docker logs celery || echo "No logs available"
+#
+#            # Очищаем неиспользуемые образы
+#            echo "Cleaning up unused images..."
+#            docker image prune -f
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            # Создаем и переходим в рабочую директорию
+            PROJECT_DIR="/home/${{ secrets.SSH_USER }}/Healthy_habits_tracker"
+            mkdir -p $PROJECT_DIR
+            cd $PROJECT_DIR
+            
+            # Создание файла .env
+            cat > .env << EOF
+            # Database
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_HOST=db
+            # Django
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            DEBUG=False
+            # Redis
+            CELERY_BROKER_URL=redis://redis:6379
+            CELERY_RESULT_BACKEND=redis://redis:6379
+            REDIS_URL=redis://redis:6379
+            # Telegram
+            TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
+            EOF
+            
+            # Копируем необходимые файлы
+            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/docker-compose.yml .
+            cp /home/${{ secrets.SSH_USER }}/Healthy_habits_tracker/nginx.conf .
+            
+            # Останавливаем и удаляем старые контейнеры
+            sudo docker-compose down || true
+            
+            # Пуллим последний образ
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+            
+            # Запускаем сервисы
+            sudo docker-compose up -d
+            
+            # Ждем и проверяем
+            sleep 15
+            echo "=== Container status ==="
+            sudo docker-compose ps
+            echo "=== Web logs ==="
+            sudo docker-compose logs web || echo "No web logs"
+            echo "=== Celery logs ==="
+            sudo docker-compose logs celery || echo "No celery logs"
+            
+            # Очистка старых образов
+            sudo docker image prune -f
